@@ -1,224 +1,150 @@
-# Use the following area to define the title color
-$Colour1 ="0A77BA"
-# Use the following area to define the Heading color
-$Colour2 ="1D6325"
-# Use the following area to define the Title text color
-$TitleTxtColour ="FFFFFF"
+# Start of Settings 
+# Show table of centents in report?
+$ShowTOC = $true
+# Number of columns in table of contents
+$ToCColumns = 3
+# End of Settings
 
-# Add Header resource
-Add-ReportResource "Header" ($StylePath + "\Header.jpg") -Used $true
+$StyleVersion = 1.0
 
-$DspHeader0 = "
-	BORDER-RIGHT: #bbbbbb 1px solid;
-	PADDING-RIGHT: 0px;
-	BORDER-TOP: #bbbbbb 1px solid;
-	DISPLAY: block;
-	PADDING-LEFT: 0px;
-	FONT-WEIGHT: bold;
-	FONT-SIZE: 8pt;
-	MARGIN-BOTTOM: -1px;
-	MARGIN-LEFT: 0px;
-	BORDER-LEFT: #bbbbbb 1px solid;
-	COLOR: #$($TitleTxtColour);
-	MARGIN-RIGHT: 0px;
-	PADDING-TOP: 4px;
-	BORDER-BOTTOM: #bbbbbb 1px solid;
-	FONT-FAMILY: Tahoma;
-	POSITION: relative;
-	HEIGHT: 2.25em;
-	WIDTH: 95%;
-	TEXT-INDENT: 10px;
-	BACKGROUND-COLOR: #$($Colour1);
-"
+# Define Chart Colours
+$ChartColours = @("377C2B", "0A77BA", "1D6325", "89CBE1")
+$ChartBackground = "FFFFFF"
 
-$DspHeader1 = "
-	BORDER-RIGHT: #bbbbbb 1px solid;
-	PADDING-RIGHT: 0px;
-	BORDER-TOP: #bbbbbb 1px solid;
-	DISPLAY: block;
-	PADDING-LEFT: 0px;
-	FONT-WEIGHT: bold;
-	FONT-SIZE: 8pt;
-	MARGIN-BOTTOM: -1px;
-	MARGIN-LEFT: 0px;
-	BORDER-LEFT: #bbbbbb 1px solid;
-	COLOR: #$($TitleTxtColour);
-	MARGIN-RIGHT: 0px;
-	PADDING-TOP: 4px;
-	BORDER-BOTTOM: #bbbbbb 1px solid;
-	FONT-FAMILY: Tahoma;
-	POSITION: relative;
-	HEIGHT: 2.25em;
-	WIDTH: 95%;
-	TEXT-INDENT: 10px;
-	BACKGROUND-COLOR: #$($Colour2);
-"
+# Set Chart dimensions (WidthxHeight)
+$ChartSize = "200x200"
 
-$dspcomments = "
-	BORDER-RIGHT: #bbbbbb 1px solid;
-	PADDING-RIGHT: 0px;
-	BORDER-TOP: #bbbbbb 1px solid;
-	DISPLAY: block;
-	PADDING-LEFT: 0px;
-	FONT-WEIGHT: bold;
-	FONT-SIZE: 8pt;
-	MARGIN-BOTTOM: -1px;
-	MARGIN-LEFT: 0px;
-	BORDER-LEFT: #bbbbbb 1px solid;
-	COLOR: #$($TitleTxtColour);
-	MARGIN-RIGHT: 0px;
-	PADDING-TOP: 4px;
-	BORDER-BOTTOM: #bbbbbb 1px solid;
-	FONT-FAMILY: Tahoma;
-	POSITION: relative;
-	HEIGHT: 2.25em;
-	WIDTH: 95%;
-	TEXT-INDENT: 10px;
-	BACKGROUND-COLOR:#FFFFE1;
-	COLOR: #000000;
-	FONT-STYLE: ITALIC;
-	FONT-WEIGHT: normal;
-	FONT-SIZE: 8pt;
-"
+# Hash table of key/value replacements
+$StyleReplace = @{"_HEADER_" = ("'$reportHeader'");
+                  "_CONTENT_" = "Get-ReportContentHTML";
+                  "_TOC_" = "Get-ReportTOC"}
 
-$filler = "
-	BORDER-RIGHT: medium none; 
-	BORDER-TOP: medium none; 
-	DISPLAY: block; 
-	BACKGROUND: none transparent scroll repeat 0% 0%; 
-	MARGIN-BOTTOM: -1px; 
-	FONT: 100%/8px Tahoma; 
-	MARGIN-LEFT: 43px; 
-	BORDER-LEFT: medium none; 
-	COLOR: #ffffff; 
-	MARGIN-RIGHT: 0px; 
-	PADDING-TOP: 4px; 
-	BORDER-BOTTOM: medium none; 
-	POSITION: relative
-"
+#region Function Defniitions
+<#
+   Get-ReportHTML - *REQUIRED*
+   Returns the HTML for the report
+#>
+function Get-ReportHTML {  
+   foreach ($replaceKey in $StyleReplace.Keys.GetEnumerator()) {
+      $ReportHTML = $ReportHTML -replace $replaceKey, (Invoke-Expression $StyleReplace[$replaceKey])
+   }
 
-$dspcont ="
-	BORDER-RIGHT: #bbbbbb 1px solid;
-	BORDER-TOP: #bbbbbb 1px solid;
-	PADDING-LEFT: 0px;
-	FONT-SIZE: 8pt;
-	MARGIN-BOTTOM: -1px;
-	PADDING-BOTTOM: 5px;
-	MARGIN-LEFT: 0px;
-	BORDER-LEFT: #bbbbbb 1px solid;
-	WIDTH: 95%;
-	COLOR: #000000;
-	MARGIN-RIGHT: 0px;
-	PADDING-TOP: 4px;
-	BORDER-BOTTOM: #bbbbbb 1px solid;
-	FONT-FAMILY: Tahoma;
-	POSITION: relative;
-	BACKGROUND-COLOR: #f9f9f9
-"
+   return $reportHTML
+}
 
+<#
+   Get-ReportContentHTML
+   Called to replace the content section of the HTML template
+#>
+function Get-ReportContentHTML {
+   $ContentHTML = ""
+   
+   foreach ($pr in $PluginResult) {
+      if ($pr.Details) {
+         $ContentHTML += Get-PluginHTML $pr
+      }
+   }
+   return $ContentHTML
+}
+<#
+   Get-PluginHTML
+   Called to populate the plugin content in the report
+#>
+function Get-PluginHTML {
+   param ($PluginResult)
 
-$HTMLHeader = @"
-<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Frameset//EN' 'http://www.w3.org/TR/html4/frameset.dtd'>
-<html><head><title>_HEADER_</title>
-		<META http-equiv=Content-Type content='text/html; charset=windows-1252'>
-		<style type='text/css'>
-		TABLE 		{
-						TABLE-LAYOUT: fixed; 
-						FONT-SIZE: 100%; 
-						WIDTH: 100%
-					}
-		*		{
-						margin:0
-					}
+   $FinalHTML = $PluginHTML -replace "_TITLE_", $PluginResult.Header
+   $FinalHTML = $FinalHTML -replace "_COMMENTS_", $PluginResult.Comments
+   $FinalHTML = $FinalHTML -replace "_PLUGINCONTENT_", $PluginResult.Details
+   $FinalHTML = $FinalHTML -replace "_PLUGINID_", $PluginResult.PluginID
+   
+   return $FinalHTML
+}
 
-		.pageholder	{
-						margin: 0px auto;
-					}
-					
-		td 				{
-						VERTICAL-ALIGN: TOP; 
-						FONT-FAMILY: Tahoma
-					}
-					
-		th 			{
-						VERTICAL-ALIGN: TOP; 
-						COLOR: #018AC0; 
-						TEXT-ALIGN: left
-					}
-		.warning { background: #FFFBAA !important }
-		.critical { background: #FFDDDD !important }
-		</style>
-	</head>
-	<body margin-left: 4pt; margin-right: 4pt; margin-top: 6pt;>
-	<a name='top'></a>
-<div style='font-family:Arial, Helvetica, sans-serif; font-size:20px; font-weight:bolder; background-color:#$($Colour1);'><center>
-<p class='accent'>
-<!--[if gte mso 9]>
-	<H1><FONT COLOR='White'>vCheck</Font></H1>
-<![endif]-->
-<!--[if !mso]><!-->
-	<IMG SRC='cid:Header' ALT='vCheck'>
-<!--<![endif]-->
-</p>
-</center></div>
-	        <div style='font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold;'><center>vCheck v$($version) by Alan Renouf (<a href='http://virtu-al.net' target='_blank'>http://virtu-al.net</a>) generated on $($ENV:Computername)
-			</center></div>
-"@
+<#
+   Get-ReportTOC
+   Generate table of contents
+#>
+function Get-ReportTOC {
+   $TOCHTML = "<table><tr>"
 
-$CustomHeader0 = @"
-	<!-- CustomHeader0 -->
-		<div style='margin: 0px auto;'>		
-		<h1 style='$($DspHeader0)'>_TITLE_</h1>
-    	<div style='$($filler)'></div>
-"@
+   $i = 0
+   foreach ($pr in ($PluginResult | Where {$_.Details})) {
+      $TOCHTML += ("<td style='padding-left: 10px'><a style='font-size: 8pt' href='#{0}'>{1}</a></td>" -f $pr.PluginID, $pr.Title)
 
-$CustomHeaderStart = @"
-	<!-- CustomHeaderStart -->
-	    <h2 style='$($dspheader1)'>_TITLE_</h2>
-"@
+      $i++
+      # We have hit the end of the line
+      if ($i%$ToCColumns -eq 0) {
+         $TOCHTML +="</tr><tr>"
+      }
+   }
+   # If the row is unfinished, need to pad it out with a cell
+   if ($i%$ToCColumns -gt 0) {
+      $TOCHTML += ("<td colspan='{0}'>&nbsp;</td>" -f ($ToCColumns-($i%$ToCColumns)))
+   }
 
-$CustomHeaderComments = @"
-	<!-- CustomHeaderComments -->
-		<div style='$($dspcomments)'>_COMMENTS_</div>
-"@
+   $TOCHTML += "</tr></table>"
 
-$CustomHeaderEnd = @"
-	<!-- CustomHeaderEnd -->
-			<div style='$($dspcont)'>
-"@
-	
-$CustomHeaderClose = @"
-	<!-- CustomHeaderClose -->
-		</DIV>
-		<div style='$($filler)'></div>
-"@
+   return $TOCHTML
+}
+#endregion
 
-$CustomHeader0Close = @"
-	<!-- CustomHeader0Close -->
-</DIV>
-<div style='width: 95%; margin: 0px auto; font-size: 8pt; text-align: right'><a href="#top">Back to Top</a></div>
-"@
-
-$CustomHTMLClose = @"
-	<!-- CustomHTMLClose -->
-</div>
-</body>
+# Report HTML structure
+$ReportHTML = @"
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <title>_HEADER_</title>
+      <meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />
+      <style type='text/css'>
+         table	{
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+         }
+         tr:nth-child(even) { 
+            background-color: #e5e5e5; 
+         }
+         td {
+               vertical-align: top; 
+               font-family: Tahoma, sans-serif;
+               font-size: 8pt;
+               padding: 0px;
+         }
+         th {
+               vertical-align: top;  
+               color: #018AC0; 
+               text-align: left;
+               font-family: Tahoma, sans-serif;
+               font-size: 8pt;
+         }
+         .pluginContent td { padding: 5px; }
+         .warning { background: #FFFBAA !important }
+         .critical { background: #FFDDDD !important }
+      </style>
+   </head>
+   <body style="padding: 0 10px; margin: 0px; font-family:Arial, Helvetica, sans-serif; ">
+      <a name="top" />
+      <div style='height: 10px; font-size: 10px;'>&nbsp;</div>
+      <table width='100%'><tr><td style='background-color: #0A77BA; border: 1px solid #0A77BA; vertical-align: middle; height: 50px; text-indent: 10px; font-size: 26px; color: #FFFFFF;'>_HEADER_</td></tr></table>
+      <div>_TOC_</div>
+      _CONTENT_
+   <!-- CustomHTMLClose -->
+   <div style='height: 10px; font-size: 10px;'>&nbsp;</div>
+   <table width='100%'><tr><td style='font-size:14px; font-weight:bold; height: 25px; text-align: center; vertical-align: middle; background-color:#0A77BA; color: white;'>vCheck v$($vCheckVersion) by <a href='http://virtu-al.net' sytle='color: white;'>Alan Renouf</a> generated on $($ENV:Computername) on $($Date.ToLongDateString()) at $($Date.ToLongTimeString())</td></tr></table>
+   </body>
 </html>
 "@
 
-$HTMLTableReplace = '<TABLE><style>tr:nth-child(even) { background-color: #e5e5e5; TABLE-LAYOUT: Fixed; FONT-SIZE: 100%; WIDTH: 100%}</style>' 
-$HTMLTdReplace = '<td style= "FONT-FAMILY: Tahoma; FONT-SIZE: 8pt;">'
-$HTMLThReplace = '<th style= "COLOR: #$($Colour1); FONT-FAMILY: Tahoma; FONT-SIZE: 8pt;">'
-$HTMLLtReplace = "<"
-$HTMLGtReplace = ">"
-
-$HTMLDetail = @"
-<TABLE TABLE-LAYOUT: Fixed; FONT-SIZE: 100%; WIDTH: 100%>
-	<tr>
-	<th width='50%';VERTICAL-ALIGN: TOP; FONT-FAMILY: Tahoma; FONT-SIZE: 8pt; COLOR: #$($Colour1);><b>_HEADING_</b></th>
-	<td width='50%';VERTICAL-ALIGN: TOP; FONT-FAMILY: Tahoma; FONT-SIZE: 8pt;>_DETAIL_</td>
-	</tr>
-</TABLE>
+# Structure of each Plugin
+$PluginHTML = @"
+   <!-- Plugin Start - _TITLE_ -->
+      <div style='height: 10px; font-size: 10px;'>&nbsp;</div>
+      <a name="_PLUGINID_" />
+      <table width='100%' style='padding: 0px; border-collapse: collapse;'><tr><td style='background-color: #1D6325; border: 1px solid #1D6325; font-family: Tahoma, sans-serif; font-weight: bold; font-size: 8pt; color: #FFFFFF; text-indent: 10px; height: 30px; vertical-align: middle;'>_TITLE_</td></tr>
+         <tr><td style='margin: 0px; background-color: #f4f7fc; color: #000000; font-style: italic; font-size: 8pt; text-indent: 10px; vertical-align: middle; border-right: 1px solid #bbbbbb; border-left: 1px solid #bbbbbb;'>_COMMENTS_</td></tr>
+         <tr><td style='margin: 0px; padding: 0px; background-color: #f9f9f9; color: #000000; font-size: 8pt; border: #bbbbbb 1px solid;'>_PLUGINCONTENT_</td></tr>
+         <tr><td style="text-align: right; background: #FFFFFF"><a href="#top" style="color: black">Back To Top</a>
+      </table>
+   <!-- Plugin End -->
 "@
-
-

@@ -8,10 +8,10 @@ $DC = @()
 
 foreach ($Server in $DFSMember)
 {
-	$DisabledConnection = Get-WmiObject -ComputerName $Server -Namespace "root\MicrosoftDFS" -Query "SELECT * FROM DfsrConnectionConfig" | Where {$_.Enabled -eq $false -and $_.Inbound -eq $false }
-	
-	[void]($DisabledConnection.ConnectionDn -match "CN=Topology,CN=(.*?),CN=DFSR-GlobalSettings,")
-	$DC += $DisabledConnection | Select @{Name="SendingServer"; Expression={$Server}}, PartnerName, @{Name="ReplicationGroup";Expression={$Matches[1]}}
+   $DisabledConnection = Get-WmiObject -ComputerName $Server -Namespace "root\MicrosoftDFS" -Query "SELECT * FROM DfsrConnectionConfig" | Where {$_.Enabled -eq $false -and $_.Inbound -eq $false }
+
+   [void]($DisabledConnection.ConnectionDn -match "CN=Topology,CN=(.*?),CN=DFSR-GlobalSettings,")
+   $DC += $DisabledConnection | Select @{Name="SendingServer"; Expression={$Server}}, PartnerName, @{Name="ReplicationGroup";Expression={$Matches[1]}}
 }
 $DC
 

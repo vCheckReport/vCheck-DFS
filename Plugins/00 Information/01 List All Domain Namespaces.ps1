@@ -8,9 +8,9 @@ $script:Namespaces = @()
 
 foreach ($n in $NS) 
 { 
-	$script:Namespaces += New-Object PSObject -Property @{ "Name"=$n | Select -ExpandProperty Name;
-														 "Servers" = ($n.remoteServerName -join "<br />") -replace "<br />\*", ""
-														}
+   $script:Namespaces += New-Object PSObject -Property @{ "Name"=$n | Select -ExpandProperty Name;
+                                                          "Servers" = ($n.remoteServerName -join "<br />") -replace "<br />\*", ""
+                                                         }
 }
 $script:Namespaces
 
