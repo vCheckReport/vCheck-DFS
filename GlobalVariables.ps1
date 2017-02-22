@@ -3,7 +3,7 @@
 
 
 # Set the following to true to enable the setup wizard for first time run
-$SetupWizard = $false
+$SetupWizard = $true
 
 
 # Start of Settings
